@@ -16,8 +16,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <meta-data android:name="com.google.android.nearby.messages.API_KEY"
-            android:value="AIzaSyD4kg-vJZmb4c7txE-VKuWKjuxXeFt4ODA" />
+        <meta-data android:name="com.google.android.nearby.messages.API_KEY" android:value="AIzaSyD4kg-vJZmb4c7txE-VKuWKjuxXeFt4ODA" />
     </application>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+    <uses-feature android:name="android.hardware.location.gps" />
 
 </manifest>
