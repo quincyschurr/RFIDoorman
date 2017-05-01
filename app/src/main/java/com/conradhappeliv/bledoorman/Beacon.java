@@ -9,4 +9,5 @@ public class Beacon {
         deviceAddress = a;
         detectTime = t;
     }
+
 }
