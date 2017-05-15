@@ -17,12 +17,16 @@ import android.os.Build;
 import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +54,29 @@ public class MainActivity extends AppCompatActivity {
                 addressTextview.setText(deviceAddress);
                 rssiTextview.setText(String.valueOf(rssi));
                 timeTextview.setText(String.valueOf(curTime));
+
+                // sampling
+                if(isSampling) {
+                    curamount += rssi;
+                    numSamples++;
+                    ((TextView) findViewById(R.id.curamtsamples)).setText(Integer.toString(numSamples));
+                    if(numSamples == totalSamples) {
+                        isSampling = false;
+                        double avgrssi = curamount/numSamples;
+                        ((TextView) findViewById(R.id.sampled)).setText(Double.toString(avgrssi));
+                    }
+                }
+
+                // threshold
+                sample_history.add(rssi);
+                while(sample_history.size() > samplesToThreshold) sample_history.remove(0);
+                int curavg = 0;
+                for(int i = 0; i < sample_history.size(); i++) {
+                    curavg += sample_history.get(i);
+                }
+                curavg /= sample_history.size();
+                if(curavg > threshold) ((TextView) findViewById(R.id.inorout)).setText("IN");
+                else ((TextView) findViewById(R.id.inorout)).setText("OUT");
             }
         }
 
@@ -80,6 +107,13 @@ public class MainActivity extends AppCompatActivity {
     TextView rssiTextview;
     TextView timeTextview;
 
+    boolean isSampling = false;
+    int numSamples = 0;
+    int totalSamples = 0;
+    int curamount = 0;
+    int threshold = -65;
+    int samplesToThreshold = 12;
+    ArrayList<Integer> sample_history = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,6 +133,24 @@ public class MainActivity extends AppCompatActivity {
         addressTextview.setText("test");
         rssiTextview.setText("test");
         timeTextview.setText("test");
+
+        ((EditText) findViewById(R.id.numsamples)).setText("50");
+        ((EditText) findViewById(R.id.numsamples2)).setText("12");
+        ((EditText) findViewById(R.id.numsamples2)).addTextChangedListener(new TextWatcher() {
+            public void afterTextChanged(Editable s) {
+                samplesToThreshold = Integer.parseInt(((EditText) findViewById(R.id.numsamples2)).getText().toString());
+            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        });
+        ((EditText) findViewById(R.id.threshold)).setText("-65");
+        ((EditText) findViewById(R.id.threshold)).addTextChangedListener(new TextWatcher() {
+            public void afterTextChanged(Editable s) {
+                threshold = Integer.parseInt(((EditText) findViewById(R.id.threshold)).getText().toString());
+            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -168,5 +220,12 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, WebViewActivity.class);
         intent.putExtra("url", url);
         startActivity(intent);
+    }
+
+    public void takeSamples(View v) {
+        totalSamples = Integer.parseInt(((EditText) findViewById(R.id.numsamples)).getText().toString());
+        numSamples = 0;
+        curamount = 0;
+        isSampling = true;
     }
 }
