@@ -1,6 +1,8 @@
 package com.conradhappeliv.bledoorman;
 
 import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -15,16 +17,20 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.ParcelUuid;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
     int threshold = -65;
     int samplesToThreshold = 12;
     ArrayList<Integer> sample_history = new ArrayList<>();
+    boolean notifications = false;
+    int notifId = 88;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 openWebView("file:///android_asset/index.html");
+                sendNotification("file:///android_asset/index.html");
             }
         });
 
@@ -150,6 +159,13 @@ public class MainActivity extends AppCompatActivity {
             }
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        });
+
+        ((ToggleButton) findViewById(R.id.notiftoggle)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                notifications = isChecked;
+            }
         });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -197,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
-        if (scanner != null) {
+        if (scanner != null && !notifications) {
             scanner.stopScan(SCAN_CALLBACK);
         }
     }
@@ -205,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(scanner != null) {
+        if(scanner != null && !notifications) {
             scanner.startScan(SCAN_FILTERS, SCAN_SETTINGS, SCAN_CALLBACK);
             Log.i(TAG, "started BLE scan");
         }
@@ -220,6 +236,24 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, WebViewActivity.class);
         intent.putExtra("url", url);
         startActivity(intent);
+    }
+
+    private void sendNotification(String url) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.smallicon)
+                .setContentTitle("BLEDoorman Activated!")
+                .setContentText("Click to navigate to " + url)
+                .setAutoCancel(true);
+        Intent resultIntent = new Intent(this, WebViewActivity.class);
+        resultIntent.putExtra("url", url);
+
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(WebViewActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(resultPendingIntent);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(notifId, builder.build());
     }
 
     public void takeSamples(View v) {
