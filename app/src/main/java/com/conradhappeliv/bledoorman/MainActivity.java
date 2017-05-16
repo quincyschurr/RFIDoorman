@@ -81,8 +81,10 @@ public class MainActivity extends AppCompatActivity {
                     curavg += sample_history.get(i);
                 }
                 curavg /= sample_history.size();
-                if(curavg > threshold) ((TextView) findViewById(R.id.inorout)).setText("IN");
-                else ((TextView) findViewById(R.id.inorout)).setText("OUT");
+                if(curavg > threshold) {
+                    ((TextView) findViewById(R.id.inorout)).setText("IN");
+                    if(notifications) sendNotification("file:///android_asset/index.html");
+                } else ((TextView) findViewById(R.id.inorout)).setText("OUT");
             }
         }
 
